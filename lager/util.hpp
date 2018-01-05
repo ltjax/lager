@@ -12,16 +12,9 @@
 
 #pragma once
 
-#include <lager/config.hpp>
-
 #include <functional>
 
 namespace lager {
-
-// copied from cppreference, in practice, use scelta::visit,
-// atria::match, mpark::match, etc.
-template <class... Ts> struct visitor : Ts... { using Ts::operator()...; };
-template <class... Ts> visitor(Ts...) -> visitor<Ts...>;
 
 constexpr auto noop = [] (auto&&...) {};
 constexpr auto identity = [] (auto&& x) { return std::forward<decltype(x)>(x); };
@@ -80,14 +73,6 @@ auto comp(Fn&& f, Fns&& ...fns)
         std::forward<Fn>(f),
         comp(std::forward<Fns>(fns)...)
     };
-}
-
-inline const char* resources_path()
-{
-    auto env_resources_path = std::getenv("LAGER_RESOURCES_PATH");
-    return env_resources_path
-        ? env_resources_path
-        : LAGER_PREFIX_PATH "/share/lager";
 }
 
 } // namespace lager

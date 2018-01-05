@@ -14,28 +14,30 @@
 
 #include <lager/store.hpp>
 #include <lager/event_loop/manual.hpp>
-
-#include "../example/counter/counter.hpp"
 #include <optional>
+
+namespace {
+    struct action {};
+}
 
 TEST_CASE("basic")
 {
-    auto viewed = std::optional<counter::model>{std::nullopt};
+    auto viewed = std::optional<int>{std::nullopt};
     auto view   = [&] (auto model) { viewed = model; };
-    auto store  = lager::make_store<counter::action>(
-        counter::model{},
-        counter::update,
+    auto store  = lager::make_store<action>(
+        int{},
+        [](auto model, auto action) {return model+1; },
         view,
         lager::with_manual_event_loop{});
 
     CHECK(viewed);
-    CHECK(viewed->value == 0);
-    CHECK(store.current().value == 0);
+    CHECK(*viewed == 0);
+    CHECK(store.current() == 0);
 
-    store.dispatch(counter::increment_action{});
+    store.dispatch(action{});
     CHECK(viewed);
-    CHECK(viewed->value == 1);
-    CHECK(store.current().value == 1);
+    CHECK(*viewed == 1);
+    CHECK(store.current() == 1);
 }
 
 TEST_CASE("effect as a result")
@@ -45,7 +47,7 @@ TEST_CASE("effect as a result")
     auto store  = lager::make_store<int>(
         0,
         [=] (int model, int action) {
-            return std::pair{model + action, effect};
+            return std::make_pair(model + action, effect);
         },
         lager::noop,
         lager::with_manual_event_loop{});

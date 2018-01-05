@@ -85,11 +85,11 @@ private:
         void dispatch(action_t action)
         {
             loop.post([=] {
-                model = invoke_reducer(reducer, model, action,
+                this->model = invoke_reducer(reducer, model, action,
                                        [&] (auto&& effect) {
                                            LAGER_FWD(effect)(context);
                                        });
-                view(model);
+                view(this->model);
             });
         }
     };
@@ -109,14 +109,7 @@ auto make_store(Model&& init,
                 EventLoop&& loop,
                 Enhancer&& enhancer)
 {
-    auto store_creator = enhancer([&] (auto action, auto&& ...args) {
-        using action_t = typename decltype(action)::type;
-        return store<action_t, std::decay_t<decltype(args)>...>{
-            std::forward<decltype(args)>(args)...
-        };
-    });
-    return store_creator(
-        type_<Action>{},
+    return store<Action, std::decay_t<Model>, std::decay_t<ReducerFn>, std::decay_t<ViewFn>, std::decay_t<EventLoop>>(
         std::forward<Model>(init),
         std::forward<ReducerFn>(reducer),
         std::forward<ViewFn>(view),
